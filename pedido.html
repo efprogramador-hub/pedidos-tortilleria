@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nota de pedido</title>
+<style>
+  :root {
+    --primary: #D4880E;
+    --bg: #FFF8F0;
+    --card: #FFFFFF;
+    --text: #2C1608;
+    --muted: #8B5A3C;
+    --border: #EAD9C4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+  .header { background: var(--primary); color: #fff; padding: 20px 16px; text-align: center; }
+  .header h1 { margin: 0; font-size: 20px; }
+  .header p { margin: 4px 0 0; font-size: 13px; opacity: 0.9; }
+  .container { max-width: 480px; margin: 0 auto; padding: 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--muted); margin: 0 0 12px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; margin-top: 10px; }
+  input, textarea {
+    width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 15px; background: #fff; color: var(--text); font-family: inherit;
+  }
+  input:focus, textarea:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+  select {
+    width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 15px; background: #fff; color: var(--text); font-family: inherit;
+    -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%238B5A3C' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+  }
+  select:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+  .fila-producto { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+  .fila-producto:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+  .fila-grid { display: flex; gap: 8px; align-items: center; }
+  .fila-grid .campo-producto { flex: 2; }
+  .fila-grid .campo-cantidad { flex: 1; }
+  .fila-producto button {
+    background: none; border: none; color: #A32D2D; font-size: 20px; cursor: pointer; padding: 4px 8px;
+  }
+  .subtotal-linea {
+    display: flex; justify-content: space-between; margin-top: 6px;
+    font-size: 12px; color: var(--muted);
+  }
+  .subtotal-linea b { color: var(--text); font-weight: 600; }
+  .total-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);
+  }
+  .total-row span:first-child { font-size: 13px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+  .total-row span:last-child { font-size: 20px; font-weight: 700; color: var(--primary); }
+  .btn-agregar {
+    background: var(--border); color: var(--text); border: none; border-radius: 8px;
+    padding: 8px 14px; font-size: 13px; margin-top: 10px; cursor: pointer;
+  }
+  .btn-enviar {
+    width: 100%; background: var(--primary); color: #fff; border: none;
+    border-radius: 10px; padding: 14px; font-size: 16px; font-weight: 600;
+    margin-top: 4px; cursor: pointer;
+  }
+  .btn-enviar:active { opacity: 0.85; }
+  .error {
+    background: #FEE2E2; border: 1px solid #FCA5A5; color: #7A1A0A;
+    padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; display: none;
+  }
+  .aviso {
+    background: #FEF9C3; border: 1px solid #FDE047; color: #854F0B;
+    padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 13px;
+  }
+  .req { color: #A32D2D; }
+  .check-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 14px; cursor: pointer;
+  }
+  .check-row input { width: auto; }
+  .check-row span { font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>🫔 TORTILLERÍA</h1>
+    <p>Nota de pedido</p>
+  </div>
+  <div class="container">
+    <div class="aviso">Llena tu pedido y toca "Enviar pedido" — se abrirá tu correo ya redactado, solo tienes que darle Enviar ahí.</div>
+    <div class="error" id="error"></div>
+
+    <form id="form-pedido" onsubmit="return enviarPedido(event)">
+      <div class="card">
+        <h2>Tus datos</h2>
+        <label>Nombre del negocio / persona <span class="req">*</span></label>
+        <input type="text" id="nombre" required>
+
+        <label>Correo <span class="req">(déjanos éste o el teléfono)</span></label>
+        <input type="email" id="correo">
+
+        <label>Teléfono <span class="req">(déjanos éste o el correo)</span></label>
+        <input type="tel" id="telefono">
+
+        <label>Dirección</label>
+        <input type="text" id="direccion">
+
+        <label>RFC (para factura, opcional)</label>
+        <input type="text" id="rfc">
+
+        <label>Razón social (opcional)</label>
+        <input type="text" id="razon_social">
+
+        <label class="check-row">
+          <input type="checkbox" id="recordar">
+          <span>Recordar mis datos en este dispositivo (no los tendrás que volver a escribir)</span>
+        </label>
+      </div>
+
+      <div class="card">
+        <h2>Qué necesitas</h2>
+        <div id="lineas"></div>
+        <button type="button" class="btn-agregar" onclick="agregarLinea()">+ Agregar otro producto</button>
+
+        <div class="total-row">
+          <span>Subtotal de tu pedido</span>
+          <span id="total-pedido">$0.00</span>
+        </div>
+
+        <label>¿Para cuándo lo necesitas?</label>
+        <input type="date" id="fecha_deseada">
+
+        <label>Notas (opcional)</label>
+        <textarea id="notas" rows="3"></textarea>
+      </div>
+
+      <button type="submit" class="btn-enviar">Enviar pedido</button>
+    </form>
+  </div>
+
+  <script>
+    // La tablet reemplaza estos valores automáticamente cada vez que generas
+    // y compartes esta nota desde Config → Nota de pedido. Si lo editaste a
+    // mano, no lo toques aquí — se pierde la próxima vez que la compartas.
+    const CORREO_DESTINO = "e.f.programador@gmail.com";
+    const NEGOCIO = "TORTILLERÍA";
+    const PRODUCTOS = [{"nombre":"MASA","precio":18.0},{"nombre":"TORTILA TAQUERA","precio":22.0},{"nombre":"TORTILLA","precio":18.0}];
+
+    function money(v) {
+      return '$' + v.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function opcionesProducto(seleccionado) {
+      return PRODUCTOS.map(p =>
+        `<option value="${p.nombre}"${p.nombre === seleccionado ? ' selected' : ''}>${p.nombre} — ${money(p.precio)}/kg</option>`
+      ).join('');
+    }
+
+    function crearLinea(nombreInicial) {
+      const fila = document.createElement('div');
+      fila.className = 'fila-producto';
+      fila.innerHTML = `
+        <div class="fila-grid">
+          <div class="campo-producto"><select name="producto">${opcionesProducto(nombreInicial)}</select></div>
+          <div class="campo-cantidad"><input type="number" name="cantidad" placeholder="Kg" min="0" step="0.5"></div>
+          <button type="button" onclick="this.closest('.fila-producto').remove(); recalcular();">×</button>
+        </div>
+        <div class="subtotal-linea"><span>Subtotal</span><b class="valor-subtotal">$0.00</b></div>`;
+      fila.querySelector('select').addEventListener('change', recalcular);
+      fila.querySelector('input[name="cantidad"]').addEventListener('input', recalcular);
+      return fila;
+    }
+
+    function recalcular() {
+      let total = 0;
+      document.querySelectorAll('.fila-producto').forEach(fila => {
+        const nombre = fila.querySelector('select').value;
+        const kg = parseFloat(fila.querySelector('input[name="cantidad"]').value) || 0;
+        const producto = PRODUCTOS.find(p => p.nombre === nombre);
+        const subtotal = producto ? producto.precio * kg : 0;
+        fila.querySelector('.valor-subtotal').textContent = money(subtotal);
+        total += subtotal;
+      });
+      document.getElementById('total-pedido').textContent = money(total);
+    }
+
+    // Si el cliente ya guardó sus datos antes en este mismo archivo, se los
+    // rellenamos para que no los vuelva a escribir en cada pedido.
+    function cargarDatosGuardados() {
+      const guardado = localStorage.getItem('pedido_cliente_datos');
+      if (!guardado) return;
+      try {
+        const d = JSON.parse(guardado);
+        document.getElementById('nombre').value = d.nombre || '';
+        document.getElementById('correo').value = d.correo || '';
+        document.getElementById('telefono').value = d.telefono || '';
+        document.getElementById('direccion').value = d.direccion || '';
+        document.getElementById('rfc').value = d.rfc || '';
+        document.getElementById('razon_social').value = d.razon_social || '';
+        document.getElementById('recordar').checked = true;
+      } catch (e) {}
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      cargarDatosGuardados();
+      const cont = document.getElementById('lineas');
+      if (PRODUCTOS.length === 0) {
+        cont.innerHTML = '<p style="color:#A32D2D;font-size:13px;">'
+          + 'Todavía no hay productos disponibles para pedido — avísale a la tienda.</p>';
+        document.querySelector('.btn-agregar').style.display = 'none';
+        return;
+      }
+      cont.appendChild(crearLinea());
+      recalcular();
+    });
+
+    function agregarLinea() {
+      document.getElementById('lineas').appendChild(crearLinea());
+      recalcular();
+    }
+
+    function enviarPedido(ev) {
+      ev.preventDefault();
+      document.getElementById('error').style.display = 'none';
+
+      const nombre       = document.getElementById('nombre').value.trim();
+      const correo       = document.getElementById('correo').value.trim();
+      const telefono     = document.getElementById('telefono').value.trim();
+      const direccion    = document.getElementById('direccion').value.trim();
+      const rfc          = document.getElementById('rfc').value.trim();
+      const razonSocial  = document.getElementById('razon_social').value.trim();
+      const fecha        = document.getElementById('fecha_deseada').value;
+      const notas        = document.getElementById('notas').value.trim();
+
+      const productosEl  = [...document.querySelectorAll('select[name="producto"]')];
+      const cantidadesEl = [...document.querySelectorAll('input[name="cantidad"]')];
+
+      const detalle = [];
+      const lineasTexto = [];
+      for (let i = 0; i < productosEl.length; i++) {
+        const p = productosEl[i].value.trim();
+        const c = cantidadesEl[i].value.trim();
+        if (p && c && parseFloat(c) > 0) {
+          detalle.push({ producto: p, cantidad: parseFloat(c) });
+          lineasTexto.push(`  ${p.padEnd(20, '.')} ${c} kg`);
+        }
+      }
+
+      const errorEl = document.getElementById('error');
+      if (!nombre) {
+        errorEl.textContent = 'Escribe tu nombre.';
+        errorEl.style.display = 'block';
+        return false;
+      }
+      if (!correo && !telefono) {
+        errorEl.textContent = 'Déjanos tu teléfono o tu correo para poder contactarte.';
+        errorEl.style.display = 'block';
+        return false;
+      }
+      if (detalle.length === 0) {
+        errorEl.textContent = 'Agrega al menos un producto con cantidad.';
+        errorEl.style.display = 'block';
+        return false;
+      }
+
+      if (document.getElementById('recordar').checked) {
+        localStorage.setItem('pedido_cliente_datos', JSON.stringify({
+          nombre: nombre, correo: correo, telefono: telefono,
+          direccion: direccion, rfc: rfc, razon_social: razonSocial,
+        }));
+      } else {
+        localStorage.removeItem('pedido_cliente_datos');
+      }
+
+      const datos = {
+        origen: "pedidos_html",
+        version: "1.0",
+        generado: new Date().toISOString(),
+        cliente: {
+          nombre: nombre, correo: correo, telefono: telefono,
+          direccion: direccion, rfc: rfc, razon_social: razonSocial,
+        },
+        fecha_deseada: fecha,
+        notas: notas,
+        detalle: detalle,
+      };
+
+      const asunto = `[PEDIDO] ${nombre} — ${fecha || 'sin fecha'}`;
+      const cuerpo = [
+        `NOTA DE PEDIDO — ${NEGOCIO}`,
+        `${nombre}${telefono ? ' · ' + telefono : ''}${direccion ? ' · ' + direccion : ''}`,
+        (rfc || razonSocial) ? `RFC: ${rfc || '—'} · Razón social: ${razonSocial || '—'}` : '',
+        ``,
+        `PRODUCTOS`,
+        ...lineasTexto,
+        ``,
+        `Fecha deseada: ${fecha || '—'}`,
+        `Notas: ${notas || '—'}`,
+        ``,
+        `──────────────────────────────`,
+        `(no borrar — usado por el sistema)`,
+        `JSON_PEDIDO: ${JSON.stringify(datos)}`,
+      ].filter(l => l !== '').join('\n');
+
+      const mailto = `mailto:${CORREO_DESTINO}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+      window.location.href = mailto;
+      return false;
+    }
+  </script>
+</body>
+</html>
