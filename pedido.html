@@ -150,7 +150,10 @@
     // mano, no lo toques aquí — se pierde la próxima vez que la compartas.
     const CORREO_DESTINO = "e.f.programador@gmail.com";
     const NEGOCIO = "TORTILLERÍA";
-    const PRODUCTOS = [{"nombre":"TORTILLA","precio":18.0},{"nombre":"TORTILLA GRUESA","precio":20.0},{"nombre":"TOTOPOS","precio":20.0}];
+    // Copia de respaldo (por si este archivo se comparte suelto, sin internet
+    // hacia productos.json). Cuando la página sí puede pedir productos.json,
+    // esta copia se reemplaza por la real al cargar — ver renderEstadoProductos().
+    let PRODUCTOS = [{"nombre":"TORTILLA","precio":18.0},{"nombre":"TORTILLA GRUESA","precio":20.0},{"nombre":"TOTOPOS","precio":20.0}];
 
     function money(v) {
       return '$' + v.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -206,17 +209,45 @@
         document.getElementById('recordar').checked = true;
       } catch (e) {}
     }
-    document.addEventListener('DOMContentLoaded', () => {
-      cargarDatosGuardados();
+    // Dibuja (o redibuja) la sección de productos según lo que haya en
+    // PRODUCTOS ahora mismo — se llama al cargar la página con la copia de
+    // respaldo, y otra vez si productos.json trae algo más reciente.
+    function renderEstadoProductos() {
       const cont = document.getElementById('lineas');
+      const btnAgregar = document.querySelector('.btn-agregar');
       if (PRODUCTOS.length === 0) {
         cont.innerHTML = '<p style="color:#A32D2D;font-size:13px;">'
           + 'Todavía no hay productos disponibles para pedido — avísale a la tienda.</p>';
-        document.querySelector('.btn-agregar').style.display = 'none';
+        btnAgregar.style.display = 'none';
+        document.getElementById('total-pedido').textContent = money(0);
         return;
       }
-      cont.appendChild(crearLinea());
+      btnAgregar.style.display = '';
+      if (cont.children.length === 0 || cont.querySelector('p')) {
+        cont.innerHTML = '';
+        cont.appendChild(crearLinea());
+      } else {
+        cont.querySelectorAll('select[name="producto"]').forEach(sel => {
+          const actual = sel.value;
+          sel.innerHTML = opcionesProducto(actual);
+          if (!PRODUCTOS.some(p => p.nombre === actual)) sel.value = PRODUCTOS[0].nombre;
+        });
+      }
       recalcular();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      cargarDatosGuardados();
+      renderEstadoProductos();
+      // Los productos y precios nunca se guardan en caché — así, aunque el
+      // navegador guarde el resto de la página, el cliente siempre ve el
+      // catálogo real al abrir el link, sin esperar ni tener que recargar.
+      fetch('productos.json', { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(lista => {
+          if (Array.isArray(lista)) { PRODUCTOS = lista; renderEstadoProductos(); }
+        })
+        .catch(() => { /* sin internet o archivo suelto: se queda con la copia de respaldo */ });
     });
 
     function agregarLinea() {
